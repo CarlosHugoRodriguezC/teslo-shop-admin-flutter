@@ -37,7 +37,6 @@ final goRouterProvider = Provider((ref) {
       final isGoingTo = state.subloc;
       final authStatus = goRouterNotifier.authStatus;
 
-      print('Auth status: $authStatus | Going to: $isGoingTo');
 
       if (isGoingTo == '/checkin' && authStatus == AuthStatus.checking) {
         return null;
