@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:teslo_shop/features/auth/infraestructure/infraestructure.dart';
+import 'package:teslo_shop/features/shared/infrastructure/services/key_value_storage_service.dart';
+import 'package:teslo_shop/features/shared/infrastructure/services/key_value_storage_service_impl.dart';
 
 import '../../domain/domain.dart';
 
@@ -40,9 +42,24 @@ class AuthState {
   }
 }
 
+final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  final AuthRepository authRepository = AuthRepositoryImpl();
+  final keyValueStorageService = KeyValueStorageServiceImpl();
+  return AuthNotifier(
+    authRepository: authRepository,
+    keyValueStorageService: keyValueStorageService,
+  );
+});
+
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository authRepository;
-  AuthNotifier({required this.authRepository}) : super(AuthState());
+  final KeyValueStorageService keyValueStorageService;
+
+  AuthNotifier(
+      {required this.authRepository, required this.keyValueStorageService})
+      : super(AuthState()) {
+    checkAuthStatus();
+  }
 
   Future<void> loginUser(String email, String password) async {
     await Future.delayed(const Duration(milliseconds: 500));
@@ -62,10 +79,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String fullName,
   ) async {}
 
-  void checkAuthStatus() async {}
+  void checkAuthStatus() async {
+    final token = await keyValueStorageService.getKeyValue<String>('token');
+
+    if (token == null) {
+      await logoutUser();
+      return;
+    }
+
+    try {
+      final user = await authRepository.checkAuthUser(token);
+      _setLoggedUser(user);
+    } catch (e) {
+      await logoutUser();
+    }
+  }
 
   Future<void> logoutUser({String? errorMessage}) async {
-    // TODO: remove token from secure storage
+    await keyValueStorageService.deleteKeyValue('token');
+
     state = state.copyWith(
       status: AuthStatus.unauthenticated,
       user: null,
@@ -73,8 +105,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  void _setLoggedUser(User user) {
-    // TODO: save token in secure storage
+  void _setLoggedUser(User user) async {
+    await keyValueStorageService.setKeyValue<String>('token', user.token);
+
     state = state.copyWith(
       status: AuthStatus.authenticated,
       errorMessage: '',
@@ -83,7 +116,3 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  final AuthRepository authRepository = AuthRepositoryImpl();
-  return AuthNotifier(authRepository: authRepository);
-});

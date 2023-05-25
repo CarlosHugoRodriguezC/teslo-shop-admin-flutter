@@ -3,16 +3,6 @@ import 'package:formz/formz.dart';
 import 'package:teslo_shop/features/auth/presentation/providers/providers.dart';
 import 'package:teslo_shop/features/shared/shared.dart';
 
-final loginFormNotifierProvider =
-    StateNotifierProvider.autoDispose<LoginFormNotifier, LoginFormState>(
-  (ref) {
-    final loginUserCallback = ref.watch(authProvider.notifier).loginUser;
-
-    return LoginFormNotifier(loginUserCallback: loginUserCallback);
-  },
-);
-
-
 class LoginFormState {
   final bool isPosting;
   final bool isPosted;
@@ -58,6 +48,15 @@ class LoginFormState {
   }
 }
 
+final loginFormNotifierProvider =
+    StateNotifierProvider.autoDispose<LoginFormNotifier, LoginFormState>(
+  (ref) {
+    final loginUserCallback = ref.watch(authProvider.notifier).loginUser;
+
+    return LoginFormNotifier(loginUserCallback: loginUserCallback);
+  },
+);
+
 class LoginFormNotifier extends StateNotifier<LoginFormState> {
   final Future<void> Function(String, String) loginUserCallback;
   LoginFormNotifier({
@@ -93,7 +92,12 @@ class LoginFormNotifier extends StateNotifier<LoginFormState> {
   onFormSubmit() async {
     _touchEveryField();
     if (!state.isValid) return;
+
+    state = state.copyWith(isPosting: true);
+
     await loginUserCallback(state.email.value, state.password.value);
+
+    state = state.copyWith(isPosting: false);
   }
 
   _touchEveryField() {
@@ -113,4 +117,3 @@ class LoginFormNotifier extends StateNotifier<LoginFormState> {
     );
   }
 }
-
