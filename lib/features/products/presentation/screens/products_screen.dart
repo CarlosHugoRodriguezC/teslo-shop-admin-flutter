@@ -55,7 +55,6 @@ class _ProductsViewState extends ConsumerState<_ProductsView> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     scrollController.dispose();
     super.dispose();
   }
@@ -76,7 +75,7 @@ class _ProductsViewState extends ConsumerState<_ProductsView> {
         itemBuilder: (context, index) {
           final product = productsState.products[index];
           return GestureDetector(
-            onTap: () => context.go('/product/${product.id}'),
+            onTap: () => context.push('/product/${product.id}'),
             child: ProductCard(
               product: product,
             ),
