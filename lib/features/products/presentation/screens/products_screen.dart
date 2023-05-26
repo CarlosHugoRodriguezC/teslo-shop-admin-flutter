@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:go_router/go_router.dart';
+import 'package:teslo_shop/features/products/presentation/widgets/widgets.dart';
+import 'package:teslo_shop/features/products/products.dart';
 import 'package:teslo_shop/features/shared/shared.dart';
 
 class ProductsScreen extends StatelessWidget {
@@ -6,36 +11,78 @@ class ProductsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
     return Scaffold(
-      drawer: SideMenu( scaffoldKey: scaffoldKey ),
+      drawer: SideMenu(scaffoldKey: scaffoldKey),
       appBar: AppBar(
         title: const Text('Products'),
         actions: [
-          IconButton(
-            onPressed: (){}, 
-            icon: const Icon( Icons.search_rounded)
-          )
+          IconButton(onPressed: () {}, icon: const Icon(Icons.search_rounded))
         ],
       ),
       body: const _ProductsView(),
       floatingActionButton: FloatingActionButton.extended(
         label: const Text('Nuevo producto'),
-        icon: const Icon( Icons.add ),
+        icon: const Icon(Icons.add),
         onPressed: () {},
       ),
     );
   }
 }
 
-
-class _ProductsView extends StatelessWidget {
+class _ProductsView extends ConsumerStatefulWidget {
   const _ProductsView();
 
   @override
+  _ProductsViewState createState() => _ProductsViewState();
+}
+
+class _ProductsViewState extends ConsumerState<_ProductsView> {
+  final scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    ref.read(productsProvider.notifier).loadNextPage();
+    scrollController.addListener(() {
+      if (scrollController.position.pixels + 200 >=
+          scrollController.position.maxScrollExtent) {
+        ref.read(productsProvider.notifier).loadNextPage();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Eres genial!'));
+    final productsState = ref.watch(productsProvider);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: MasonryGridView.count(
+        physics: const BouncingScrollPhysics(),
+        controller: scrollController,
+        crossAxisCount: 2,
+        mainAxisSpacing: 20,
+        crossAxisSpacing: 20,
+        itemCount: productsState.products.length,
+        itemBuilder: (context, index) {
+          final product = productsState.products[index];
+          return GestureDetector(
+            onTap: () => context.go('/product/${product.id}'),
+            child: ProductCard(
+              product: product,
+            ),
+          );
+        },
+      ),
+    );
   }
 }

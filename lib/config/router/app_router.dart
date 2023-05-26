@@ -32,11 +32,17 @@ final goRouterProvider = Provider((ref) {
         path: '/',
         builder: (context, state) => const ProductsScreen(),
       ),
+      GoRoute(
+        path: '/product/:productId',
+        builder: (context, state) {
+          final productId = state.params['productId'] ?? 'no-id';
+          return ProductScreen(productId: productId);
+        },
+      ),
     ],
     redirect: (context, state) {
       final isGoingTo = state.subloc;
       final authStatus = goRouterNotifier.authStatus;
-
 
       if (isGoingTo == '/checkin' && authStatus == AuthStatus.checking) {
         return null;
